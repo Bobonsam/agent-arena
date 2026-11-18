@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent Arena — the daily game for Agent ID holders</title>
+<meta name="description" content="Check in daily, build your streak, and call the daily prediction. Only for Agent ID holders on BNB Chain.">
+<style>
+  :root{--bg:#0b0e14;--card:#141926;--line:#232c42;--txt:#e8ecf4;--mut:#8b96ad;--acc:#f0b90b;--acc2:#22c55e;--bad:#ef4444}
+  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--txt);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  .wrap{max-width:720px;margin:0 auto;padding:20px 16px 48px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:8px 0 4px}
+  h1{font-size:26px;margin:0} h1 .a{color:var(--acc)}
+  .tag{color:var(--mut);margin:2px 0 18px;font-size:14px}
+  button{background:var(--acc);color:#111;border:0;border-radius:10px;padding:11px 16px;font-weight:700;cursor:pointer;font-size:15px}
+  button:disabled{background:#2a3350;color:var(--mut);cursor:not-allowed}
+  button.ghost{background:transparent;color:var(--txt);border:1px solid var(--line)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin:12px 0}
+  .card h2{margin:0 0 8px;font-size:17px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .stat{flex:1;min-width:100px;background:#0e1220;border:1px solid var(--line);border-radius:10px;padding:10px;text-align:center}
+  .stat b{display:block;font-size:20px} .stat span{color:var(--mut);font-size:12px}
+  .opt{flex:1;min-width:120px;background:#0e1220;color:var(--txt);border:1px solid var(--line)}
+  .opt.sel{border-color:var(--acc);color:var(--acc)}
+  .mut{color:var(--mut);font-size:13px} .ok{color:var(--acc2)} .bad{color:var(--bad)}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  td,th{padding:7px 6px;border-bottom:1px solid var(--line);text-align:left}
+  .tier{font-size:11px;border:1px solid var(--line);border-radius:99px;padding:2px 8px;color:var(--acc)}
+  footer{color:var(--mut);font-size:12px;margin-top:22px;line-height:1.55}
+  a{color:var(--acc)}
+  #msg{min-height:20px;font-size:13px;margin:6px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Agent <span class="a">Arena</span></h1>
+    <button id="btnConnect">Connect Wallet</button>
+  </header>
+  <p class="tag">The daily game for Agent ID holders. Check in, keep your streak alive, call the daily prediction.</p>
+  <div id="msg" class="mut"></div>
+
+  <div class="card" id="cardPlayer" style="display:none">
+    <h2>Your Agent</h2>
+    <div class="row">
+      <div class="stat"><b id="stPoints">–</b><span>POINTS</span></div>
+      <div class="stat"><b id="stStreak">–</b><span>STREAK (DAYS)</span></div>
+      <div class="stat"><b id="stBest">–</b><span>BEST STREAK</span></div>
+      <div class="stat"><b id="stTier">–</b><span>TIER</span></div>
+    </div>
+    <p class="mut" id="agentLine"></p>
+    <div class="row" style="margin-top:10px">
+      <button id="btnCheckin">Check In Today (+10 pts)</button>
+      <span class="mut" id="checkinNote"></span>
+    </div>
+  </div>
+
+  <div class="card" id="cardMission" style="display:none">
+    <h2>Today's Prediction Mission</h2>
+    <p id="missionQ" style="font-size:16px;margin:4px 0 10px">Loading…</p>
+    <div class="row" id="missionOpts"></div>
+    <p class="mut" id="missionNote"></p>
+    <div id="yesterdayBox"></div>
+  </div>
+
+  <div class="card">
+    <h2>Leaderboard</h2>
+    <div id="board"><p class="mut">Loading…</p></div>
+    <p class="mut" id="boardStats"></p>
+  </div>
+
+  <footer>
+    <p><b>How it works:</b> every core action requires holding an <b>Agent ID</b> (the non-transferable identity of an Agentic Wallet, BNB Chain contract <a id="agentIdLink" target="_blank" rel="noopener">0x60b9…022f</a>). Check in once a day to grow your streak (+10 points, +1 bonus per streak day, capped at +20). Predict the daily mission for a chance at +50 points. Streak tiers: Bronze at 3 days, Silver at 7, Gold at 14.</p>
+    <p><b>Points are a game score only.</b> They are not a token, cannot be transferred or exchanged, and have no monetary value. Nothing on this page is a promise of returns. Every action is a transaction you sign yourself from your own wallet; you pay your own network gas (BNB Chain fees are typically a fraction of a cent). This site never asks for a seed phrase, private key, or pairing code, and never stores your session.</p>
+    <p>Contract: <a id="arenaLink" target="_blank" rel="noopener">AgentArena</a> · Source code is open and verified — owner powers are limited to publishing and resolving missions and an emergency pause; the owner cannot change any player's points, streak, or predictions.</p>
+  </footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
+<script>
+// ================= CONFIG (filled at deployment) =================
+const CONFIG = {
+  ARENA_ADDRESS: "0x9d882de345fe123384b3d79ad681776126fd13c9",
+  AGENT_ID: "0x60b9262456de011f7d15a54cdd8c48baaa8b022f",
+  CHAIN_ID: 56,
+  RPC: "https://bsc-dataseed.binance.org"
+};
+const ARENA_ABI = [
+  "function checkIn()","function predict(uint8 choice)","function claimPrediction(uint256 day)",
+  "function getPlayer(address) view returns (uint32,uint32,uint32,uint64,uint8,bool)",
+  "function getMission(uint256) view returns (string,string,uint8,uint8,bool)",
+  "function predictions(uint256,address) view returns (uint8)",
+  "function predictionClaimed(uint256,address) view returns (bool)",
+  "function playerCount() view returns (uint256)",
+  "function playersPage(uint256,uint256) view returns (address[])",
+  "function totalCheckins() view returns (uint256)","function totalPredictions() view returns (uint256)",
+  "function today() view returns (uint256)"
+];
+const AGENT_ABI = ["function balanceOf(address) view returns (uint256)"];
+const TIERS = ["—","Bronze","Silver","Gold"];
+const $ = id => document.getElementById(id);
+const msg = (t, cls) => { const m = $("msg"); m.textContent = t; m.className = cls || "mut"; };
+const short = a => a.slice(0,6) + "…" + a.slice(-4);
+
+let provider, signer, account, arena, agentId;
+const readProvider = new ethers.JsonRpcProvider(CONFIG.RPC);
+const arenaRead = () => new ethers.Contract(CONFIG.ARENA_ADDRESS, ARENA_ABI, readProvider);
+const agentRead = new ethers.Contract(CONFIG.AGENT_ID, AGENT_ABI, readProvider);
+
+$("agentIdLink").href = "https://bscscan.com/address/" + CONFIG.AGENT_ID;
+$("agentIdLink").textContent = CONFIG.AGENT_ID.slice(0,6) + "…" + CONFIG.AGENT_ID.slice(-4);
+if (CONFIG.ARENA_ADDRESS !== "DEPLOY_PENDING") {
+  $("arenaLink").href = "https://bscscan.com/address/" + CONFIG.ARENA_ADDRESS;
+  $("arenaLink").textContent = "AgentArena " + short(CONFIG.ARENA_ADDRESS);
+}
+
+async function connect() {
+  if (!window.ethereum) { msg("No wallet found. Open this page in your wallet's dApp browser or install a BNB Chain wallet.", "bad"); return; }
+  provider = new ethers.BrowserProvider(window.ethereum);
+  const net = await provider.getNetwork();
+  if (Number(net.chainId) !== CONFIG.CHAIN_ID) {
+    try { await window.ethereum.request({ method: "wallet_switchEthereumChain", params: [{ chainId: "0x38" }] }); }
+    catch (e) { msg("Please switch your wallet to BNB Chain (chain 56).", "bad"); return; }
+    provider = new ethers.BrowserProvider(window.ethereum);
+  }
+  signer = await provider.getSigner();
+  account = await signer.getAddress();
+  arena = new ethers.Contract(CONFIG.ARENA_ADDRESS, ARENA_ABI, signer);
+  agentId = new ethers.Contract(CONFIG.AGENT_ID, AGENT_ABI, signer);
+  $("btnConnect").textContent = short(account);
+  await refreshPlayer();
+}
+
+async function refreshPlayer() {
+  if (!account) return;
+  const bal = await agentRead.balanceOf(account);
+  const holds = bal > 0n;
+  $("cardPlayer").style.display = "block";
+  $("cardMission").style.display = "block";
+  $("agentLine").innerHTML = holds
+    ? `<span class="ok">●</span> Agent ID verified for ${short(account)} — you can play.`
+    : `<span class="bad">●</span> ${short(account)} does not hold an Agent ID. Agent ID is claimed inside the Binance App (Wallet → Agent ID). Spectators can still read the leaderboard.`;
+  $("btnCheckin").disabled = !holds;
+  const p = await arenaRead().getPlayer(account);
+  $("stPoints").textContent = p[3].toString();
+  $("stStreak").textContent = p[1].toString();
+  $("stBest").textContent = p[2].toString();
+  $("stTier").textContent = TIERS[Number(p[4])];
+  const today = Number(await arenaRead().today());
+  const checked = Number(p[0]) >= today && p[5];
+  $("btnCheckin").disabled = !holds || checked;
+  $("checkinNote").textContent = checked ? "Checked in today — see you tomorrow." : "";
+  await refreshMission(today);
+}
+
+async function refreshMission(today) {
+  const m = await arenaRead().getMission(today);
+  const yb = $("yesterdayBox"); yb.innerHTML = "";
+  if (!m[4]) { $("missionQ").textContent = "No mission published for today yet — check-in still counts. New missions land daily."; $("missionOpts").innerHTML = ""; $("missionNote").textContent = ""; }
+  else {
+    $("missionQ").textContent = m[0];
+    const opts = m[1].split(";").map(s => s.trim());
+    const mine = account ? Number(await arenaRead().predictions(today, account)) : 0;
+    $("missionOpts").innerHTML = "";
+    opts.forEach((label, i) => {
+      const b = document.createElement("button");
+      b.className = "opt" + (mine === i + 1 ? " sel" : "");
+      b.textContent = label;
+      b.disabled = !account || mine !== 0;
+      b.onclick = () => doPredict(i + 1);
+      $("missionOpts").appendChild(b);
+    });
+    $("missionNote").textContent = mine ? `Your call: ${opts[mine - 1]}. Result lands tomorrow — come back to claim +50 if you're right.` : "Pick one — one call per day, +50 points if you're right.";
+  }
+  // yesterday: result + claim
+  if (account && today > 0) {
+    const ym = await arenaRead().getMission(today - 1);
+    if (ym[4] && Number(ym[3]) !== 0) {
+      const myPick = Number(await arenaRead().predictions(today - 1, account));
+      const claimed = await arenaRead().predictionClaimed(today - 1, account);
+      if (myPick !== 0 && myPick === Number(ym[3]) && !claimed) {
+        yb.innerHTML = `<hr style="border-color:var(--line)"><p class="ok">Yesterday you called it right! <button id="btnClaim" style="margin-left:8px">Claim +50 pts</button></p>`;
+        $("btnClaim").onclick = doClaimYesterday;
+      } else if (myPick !== 0) {
+        yb.innerHTML = `<p class="mut">Yesterday's answer: option ${Number(ym[3])}. ${myPick === Number(ym[3]) ? "Points claimed." : "Better luck today."}</p>`;
+      }
+    }
+  }
+}
+
+async function doCheckin() {
+  try { msg("Signing check-in in your wallet…"); const tx = await arena.checkIn(); await tx.wait(); msg("Checked in. Streak updated.", "ok"); await refreshPlayer(); await loadBoard(); }
+  catch (e) { msg("Check-in failed: " + (e.shortMessage || e.message || e), "bad"); }
+}
+async function doPredict(choice) {
+  try { msg("Signing your prediction…"); const tx = await arena.predict(choice); await tx.wait(); msg("Prediction locked in.", "ok"); await refreshPlayer(); }
+  catch (e) { msg("Prediction failed: " + (e.shortMessage || e.message || e), "bad"); }
+}
+async function doClaimYesterday() {
+  try { const today = Number(await arenaRead().today()); msg("Claiming…"); const tx = await arena.claimPrediction(today - 1); await tx.wait(); msg("+50 points claimed.", "ok"); await refreshPlayer(); await loadBoard(); }
+  catch (e) { msg("Claim failed: " + (e.shortMessage || e.message || e), "bad"); }
+}
+
+async function loadBoard() {
+  try {
+    const r = arenaRead();
+    const n = Number(await r.playerCount());
+    const addrs = n ? await r.playersPage(0, Math.min(n, 200)) : [];
+    const rows = [];
+    for (const a of addrs) { const p = await r.getPlayer(a); rows.push({ a, pts: Number(p[3]), streak: Number(p[1]), tier: Number(p[4]) }); }
+    rows.sort((x, y) => y.pts - x.pts);
+    $("board").innerHTML = rows.length
+      ? "<table><tr><th>#</th><th>Agent</th><th>Points</th><th>Streak</th><th>Tier</th></tr>" +
+        rows.map((r2, i) => `<tr><td>${i + 1}</td><td>${short(r2.a)}${account && r2.a.toLowerCase() === account.toLowerCase() ? " (you)" : ""}</td><td><b>${r2.pts}</b></td><td>${r2.streak}</td><td><span class="tier">${TIERS[r2.tier]}</span></td></tr>`).join("") + "</table>"
+      : "<p class='mut'>No players yet — be the first Agent ID holder to check in.</p>";
+    const tc = await r.totalCheckins(), tp = await r.totalPredictions();
+    $("boardStats").textContent = `${n} players · ${tc} check-ins · ${tp} predictions so far.`;
+  } catch (e) { $("board").innerHTML = "<p class='mut'>Leaderboard unavailable until the contract is live.</p>"; }
+}
+
+$("btnConnect").onclick = connect;
+$("btnCheckin").onclick = doCheckin;
+if (window.ethereum) window.ethereum.on?.("accountsChanged", () => location.reload());
+loadBoard();
+</script>
+</body>
+</html>
