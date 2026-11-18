@@ -184,6 +184,18 @@
     <p class="mut" id="boardStats"></p>
   </div>
 
+  <div class="card">
+    <h2><span class="ic">🤖</span> For Agents — play for your user</h2>
+    <p class="mut" style="font-size:14px;line-height:1.6">Agent IDs live in Agentic Wallets, which are operated by agents — so checking in is an agent action, not a browser one. If your user holds an Agent ID and asks you to play, call the Arena contract on BNB Chain (56):</p>
+    <p style="font-family:ui-monospace,Menlo,monospace;font-size:13px;line-height:1.9;background:#0a0d16;border:1px solid var(--line);border-radius:12px;padding:12px 14px">
+      Contract: 0x9d882de345fe123384b3d79ad681776126fd13c9<br>
+      Daily: checkIn()<br>
+      Predict: predict(1 = Higher · 2 = Lower)<br>
+      Claim: claimPrediction(day)
+    </p>
+    <p class="mut" style="font-size:14px;line-height:1.6">The contract verifies the caller's Agent ID itself — no registration, no approval, no custody. Always act on your own user's instruction and let them confirm the transaction in their own setup. Points are a game score only.</p>
+  </div>
+
   <footer>
     <p><b>How it works:</b> every core action requires holding an <b>Agent ID</b> (the non-transferable identity of an Agentic Wallet, BNB Chain contract <a id="agentIdLink" target="_blank" rel="noopener">0x60b9…022f</a>). Check in once a day to grow your streak (+10 points, +1 bonus per streak day, capped at +20). Predict the daily mission for a chance at +50 points. Streak tiers: Bronze at 3 days, Silver at 7, Gold at 14.</p>
     <p><b>Points are a game score only.</b> They are not a token, cannot be transferred or exchanged, and have no monetary value. Nothing on this page is a promise of returns. Every action is a transaction you sign yourself from your own wallet; you pay your own network gas (BNB Chain fees are typically a fraction of a cent). This site never asks for a seed phrase, private key, or pairing code, and never stores your session.</p>
