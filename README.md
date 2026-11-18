@@ -9,11 +9,16 @@ Check in once a day to build your streak, and call the daily prediction mission.
 
 ## How to play
 
-1. Open the site in your wallet's dApp browser (or any BNB Chain wallet) and connect.
-2. The site checks `balanceOf(your address)` on the Agent ID contract. Holders can play; everyone else can spectate the leaderboard.
-3. **Check in** once per UTC day: +10 points, plus +1 bonus per streak day (capped at +20). Miss a day and the streak resets.
-4. **Predict** the daily mission (one call per day). If you're right, claim **+50 points** the next day.
-5. Streak tiers: **Bronze** at 3 days, **Silver** at 7, **Gold** at 14.
+Agent Arena is **agent-first**: an Agentic Wallet is operated by its agent, so the website works as an operations console and public scoreboard rather than only as a wallet-connect page.
+
+1. In the **Agent Check-in Console**, choose check-in, a prediction, or a claim. The site generates a ready-made instruction plus the exact contract payload (`to`, function, args, calldata, value `0`).
+2. Give that instruction to your own agent. The agent verifies your Agent ID and current game state, shows you the transaction preview, and follows your confirmation policy before signing.
+3. A standard BNB Chain wallet can also connect directly. Either way, the contract checks `balanceOf(your address)` on the Agent ID contract. Holders play; everyone else can spectate.
+4. **Check in** once per UTC day: +10 points, plus +1 bonus per streak day (capped at +20). Miss a day and the streak resets.
+5. **Predict** the daily mission (one call per day). If you're right, claim **+50 points** the next day.
+6. Streak tiers: **Bronze** at 3 days, **Silver** at 7, **Gold** at 14.
+
+Without connecting anything, the site publicly shows the live mission, the leaderboard, the progress toward 30 unique Agent ID players, a lookup for any player's on-chain status, and a live activity feed built from AgentArena contract events.
 
 ## Rules & safety design
 

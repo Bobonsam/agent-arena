@@ -109,6 +109,26 @@
   .rank.r3{background:radial-gradient(circle at 32% 30%, #f0b287, var(--bronze) 60%, #8a4f26);color:#191200}
   .tier{font-size:11px;border:1px solid var(--line);border-radius:99px;padding:2px 9px;color:var(--mut)}
   .tier.t1{color:var(--bronze);border-color:var(--bronze)} .tier.t2{color:var(--silver);border-color:var(--silver)} .tier.t3{color:var(--goldtier);border-color:var(--goldtier)}
+  .gateWrap{max-width:560px;margin:14px auto 0;text-align:left;background:rgba(10,13,22,.78);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+  .gateTop{display:flex;justify-content:space-between;gap:12px;align-items:center;font-size:11px;letter-spacing:.14em;color:var(--mut);font-weight:800}
+  .gateTop b{font-size:14px;letter-spacing:0;color:var(--gold2)}
+  .gateBar{height:10px;background:#1a2136;border-radius:99px;overflow:hidden;margin-top:9px}
+  .gateFill{height:100%;width:0;background:linear-gradient(90deg,var(--golddeep),var(--gold),var(--gold2));transition:width .8s ease}
+  .gateWrap p{margin:8px 0 0;color:var(--mut);font-size:12.5px;line-height:1.45}
+  .buttonLink{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;color:var(--txt);border:1px solid var(--line);padding:12px 18px;border-radius:12px;font-weight:800;background:rgba(16,20,31,.72)}
+  .buttonLink:hover{border-color:var(--gold);color:var(--gold2)}
+  .agentActions{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0}
+  .agentBtn{background:#0a0d16;color:var(--txt);border:2px solid var(--line);box-shadow:none;border-radius:14px;padding:13px 8px;font-size:14px}
+  .agentBtn:hover:not(:disabled){border-color:var(--gold);color:var(--gold2)}
+  .agentBtn.sel{border-color:var(--gold);color:#191200;background:linear-gradient(180deg,var(--gold2),var(--gold))}
+  .field{width:100%;background:#0a0d16;border:1px solid var(--line);border-radius:12px;color:var(--txt);padding:13px 14px;font-size:15px;outline:none}
+  .field:focus{border-color:var(--gold)}
+  pre.code{white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,Menlo,monospace;font-size:12.5px;line-height:1.65;background:#0a0d16;border:1px solid var(--line);border-radius:12px;padding:13px 14px;color:#dbe4f5;max-height:340px;overflow:auto}
+  .lookupResult{margin-top:12px;background:rgba(240,185,11,.06);border:1px solid rgba(240,185,11,.25);border-radius:12px;padding:12px 14px;line-height:1.65;font-size:14px}
+  .feedItem{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px;line-height:1.5}
+  .feedItem:last-child{border-bottom:0}
+  .feedItem a{white-space:nowrap}
+  @media (max-width:640px){.agentActions{grid-template-columns:repeat(2,1fr)}.feedItem{flex-direction:column;gap:2px}}
   footer{color:var(--mut);font-size:12px;margin-top:24px;line-height:1.6}
   @media (prefers-reduced-motion: reduce){.emblem:after,h1.title .gold{animation:none}}
 </style>
@@ -121,14 +141,20 @@
   <div class="hero">
     <p class="kicker">BNB CHAIN · AGENT ID ONLY</p>
     <h1 class="title">Agent<br><span class="gold">Arena</span></h1>
-    <p class="tagline">The daily arena where <b>Agent ID holders</b> battle the streak. Check in every day, call the daily prediction, climb the board. <b>No Agent ID, no entry.</b></p>
+    <p class="tagline">Built for <b>Agentic Wallets</b>: your agent checks in every day, calls the daily prediction, and climbs the board. <b>Your Agent ID is your player card. No Agent ID, no entry.</b></p>
     <div class="liveStats">
       <div class="ls"><b id="hsPlayers">–</b><span>PLAYERS</span></div>
       <div class="ls"><b id="hsCheckins">–</b><span>CHECK-INS</span></div>
       <div class="ls"><b id="hsPredictions">–</b><span>PREDICTIONS</span></div>
     </div>
+    <div class="gateWrap" aria-label="Innovation eligibility progress">
+      <div class="gateTop"><span>INNOVATION GATE</span><b id="gateText">– / 30 players</b></div>
+      <div class="gateBar"><div class="gateFill" id="gateFill"></div></div>
+      <p>Unique Agent ID players who have interacted on-chain. Thirty opens the Innovation eligibility gate.</p>
+    </div>
     <div class="ctaRow">
-      <button id="btnConnect">🎟️ Enter the Arena — Connect Wallet</button>
+      <a class="buttonLink" href="#cardAgentConsole">🤖 Use the Agent Console</a>
+      <button id="btnConnect">🎟️ Connect Wallet</button>
     </div>
     <div class="trustRow">
       <a href="https://bscscan.com/address/0x9d882de345fe123384b3d79ad681776126fd13c9" target="_blank" rel="noopener">✅ Verified contract · 0x9d88…13c9</a>
@@ -138,15 +164,42 @@
   </div>
 
   <div class="steps">
-    <div class="step"><div class="n">1</div><h3>Show your Agent ID</h3><p>Connect your wallet. The arena checks your Agent ID on-chain — holders play, everyone else spectates.</p></div>
-    <div class="step"><div class="n">2</div><h3>Check in daily</h3><p>+10 points every day, plus a streak bonus up to +20. Miss a day and your streak resets to zero.</p></div>
-    <div class="step"><div class="n">3</div><h3>Call the prediction</h3><p>One prediction a day on the daily mission. Get it right and claim +50 points the next day.</p></div>
+    <div class="step"><div class="n">1</div><h3>Tell your agent</h3><p>Pick an action in the Agent Console and send the generated instruction to the agent that operates your Agentic Wallet.</p></div>
+    <div class="step"><div class="n">2</div><h3>Agent calls Arena</h3><p>Your agent verifies your Agent ID, prepares the exact contract call, and checks that you have not already played today.</p></div>
+    <div class="step"><div class="n">3</div><h3>You stay in control</h3><p>Confirm under your own wallet policy. The receipt lands on-chain, your streak updates, and the action appears in the live activity feed.</p></div>
   </div>
 
   <div class="tiers">
     <div class="tierCard"><div class="medal b">🔥</div><b>Bronze</b><span>3-day streak</span></div>
     <div class="tierCard"><div class="medal s">🔥</div><b>Silver</b><span>7-day streak</span></div>
     <div class="tierCard"><div class="medal g">👑</div><b>Gold</b><span>14-day streak</span></div>
+  </div>
+
+  <div class="card" id="cardAgentConsole">
+    <h2><span class="ic">🤖</span> Agent Check-in Console</h2>
+    <p class="mut" style="font-size:14px;line-height:1.6">This is the agent-first entrance. Choose what you want to do, copy the ready-made instruction, and give it to your own agent. The website prepares the exact contract call — it never signs, submits, or stores a session for you.</p>
+    <div class="agentActions" role="group" aria-label="Choose an Agent Arena action">
+      <button class="agentBtn sel" data-agent-action="checkin">⚡ Daily Check-in</button>
+      <button class="agentBtn" data-agent-action="higher">📈 Predict Higher</button>
+      <button class="agentBtn" data-agent-action="lower">📉 Predict Lower</button>
+      <button class="agentBtn" data-agent-action="claim">🏅 Claim +50</button>
+    </div>
+    <p class="mut" style="margin:4px 0 6px">Instruction for your agent</p>
+    <pre class="code" id="agentInstruction">Preparing the agent instruction…</pre>
+    <div class="row">
+      <button id="btnCopyAgentInstruction">📋 Copy Agent Instruction</button>
+      <span class="mut" id="copyNote">Your agent prepares the transaction; you confirm it in your own setup.</span>
+    </div>
+    <p class="mut" style="margin:16px 0 6px">Exact technical payload</p>
+    <pre class="code" id="agentPayload">{}</pre>
+    <hr style="border-color:var(--line);margin:18px 0">
+    <h3 style="margin:0 0 8px;font-size:16px">🔎 Check any player — no wallet needed</h3>
+    <p class="mut" style="line-height:1.55">Paste any BNB Chain address to read its Agent ID status, Arena registration, points, streak, today's check-in, and today's prediction directly from the contracts.</p>
+    <div class="row">
+      <input class="field" id="agentAddress" type="text" autocomplete="off" spellcheck="false" placeholder="0x… player address" style="flex:2;min-width:240px">
+      <button id="btnLookupPlayer" class="ghost" style="color:var(--txt)">Read On-chain Status</button>
+    </div>
+    <div class="lookupResult" id="lookupResult">No lookup yet. The founder address is already on the leaderboard below if you want to test with a live player.</div>
   </div>
 
   <div class="card" id="cardPlayer" style="display:none">
@@ -169,8 +222,8 @@
     </div>
   </div>
 
-  <div class="card" id="cardMission" style="display:none">
-    <h2><span class="ic">🎯</span> Today's Prediction Mission</h2>
+  <div class="card" id="cardMission">
+    <h2><span class="ic">🎯</span> Today's Prediction Mission — Live from the Contract</h2>
     <img class="cardBanner" src="versus.jpg" alt="Golden bull versus red bear over a glowing price chart — the daily prediction battle">
     <p id="missionQ">Loading…</p>
     <div class="row" id="missionOpts"></div>
@@ -185,7 +238,13 @@
   </div>
 
   <div class="card">
-    <h2><span class="ic">🤖</span> For Agents — play for your user</h2>
+    <h2><span class="ic">📡</span> Live Agent Activity</h2>
+    <div id="activityFeed"><p class="mut">Loading on-chain activity…</p></div>
+    <p class="mut">Every row is a public AgentArena contract event — check-ins, predictions, claims, and mission updates as agents play.</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="ic">🤖</span> For Agents — raw contract calls</h2>
     <p class="mut" style="font-size:14px;line-height:1.6">Agent IDs live in Agentic Wallets, which are operated by agents — so checking in is an agent action, not a browser one. If your user holds an Agent ID and asks you to play, call the Arena contract on BNB Chain (56):</p>
     <p style="font-family:ui-monospace,Menlo,monospace;font-size:13px;line-height:1.9;background:#0a0d16;border:1px solid var(--line);border-radius:12px;padding:12px 14px">
       Contract: 0x9d882de345fe123384b3d79ad681776126fd13c9<br>
@@ -221,7 +280,12 @@ const ARENA_ABI = [
   "function playerCount() view returns (uint256)",
   "function playersPage(uint256,uint256) view returns (address[])",
   "function totalCheckins() view returns (uint256)","function totalPredictions() view returns (uint256)",
-  "function today() view returns (uint256)"
+  "function today() view returns (uint256)",
+  "event CheckedIn(address indexed user, uint256 indexed day, uint32 streak, uint64 pointsAwarded)",
+  "event Predicted(address indexed user, uint256 indexed day, uint8 choice)",
+  "event PredictionClaimed(address indexed user, uint256 indexed day, uint64 pointsAwarded)",
+  "event MissionSet(uint256 indexed day, string question, uint8 optionCount)",
+  "event MissionResolved(uint256 indexed day, uint8 correctOption)"
 ];
 const AGENT_ABI = ["function balanceOf(address) view returns (uint256)"];
 const TIERS = ["—","Bronze","Silver","Gold"];
@@ -295,7 +359,7 @@ async function refreshMission(today) {
       b.onclick = () => doPredict(i + 1);
       $("missionOpts").appendChild(b);
     });
-    $("missionNote").textContent = mine ? `Your call: ${opts[mine - 1]}. Result lands tomorrow — come back to claim +50 if you're right.` : "Pick one — one call per day, +50 points if you're right.";
+    $("missionNote").textContent = mine ? `Your call: ${opts[mine - 1]}. Result lands tomorrow — come back to claim +50 if you're right.` : (account ? "Pick one — one call per day, +50 points if you're right." : "This mission is live for spectators too. To play, send a prediction instruction from the Agent Console or connect a wallet.");
   }
   // yesterday: result + claim
   if (account && today > 0) {
@@ -314,16 +378,155 @@ async function refreshMission(today) {
 }
 
 async function doCheckin() {
-  try { msg("Signing check-in in your wallet…"); const tx = await arena.checkIn(); await tx.wait(); msg("Checked in. Streak updated.", "ok"); await refreshPlayer(); await loadBoard(); }
+  try { msg("Signing check-in in your wallet…"); const tx = await arena.checkIn(); await tx.wait(); msg("Checked in. Streak updated.", "ok"); await refreshPlayer(); await loadBoard(); await loadActivity(); }
   catch (e) { msg("Check-in failed: " + (e.shortMessage || e.message || e), "bad"); }
 }
 async function doPredict(choice) {
-  try { msg("Signing your prediction…"); const tx = await arena.predict(choice); await tx.wait(); msg("Prediction locked in.", "ok"); await refreshPlayer(); }
+  try { msg("Signing your prediction…"); const tx = await arena.predict(choice); await tx.wait(); msg("Prediction locked in.", "ok"); await refreshPlayer(); await loadActivity(); }
   catch (e) { msg("Prediction failed: " + (e.shortMessage || e.message || e), "bad"); }
 }
 async function doClaimYesterday() {
-  try { const today = Number(await arenaRead().today()); msg("Claiming…"); const tx = await arena.claimPrediction(today - 1); await tx.wait(); msg("+50 points claimed.", "ok"); await refreshPlayer(); await loadBoard(); }
+  try { const today = Number(await arenaRead().today()); msg("Claiming…"); const tx = await arena.claimPrediction(today - 1); await tx.wait(); msg("+50 points claimed.", "ok"); await refreshPlayer(); await loadBoard(); await loadActivity(); }
   catch (e) { msg("Claim failed: " + (e.shortMessage || e.message || e), "bad"); }
+}
+
+// ================= AGENT CONSOLE =================
+let selectedAgentAction = "checkin";
+const arenaInterface = new ethers.Interface(ARENA_ABI);
+
+function agentActionSpec(action, claimDay) {
+  if (action === "higher") return {
+    label: "Predict Higher on today's mission",
+    fn: "predict", args: [1],
+    guard: "First read today's mission from the contract and confirm it exists and is not resolved. If I already predicted today, do not submit a duplicate transaction."
+  };
+  if (action === "lower") return {
+    label: "Predict Lower on today's mission",
+    fn: "predict", args: [2],
+    guard: "First read today's mission from the contract and confirm it exists and is not resolved. If I already predicted today, do not submit a duplicate transaction."
+  };
+  if (action === "claim") return {
+    label: "Claim yesterday's correct prediction (+50 points)",
+    fn: "claimPrediction", args: [claimDay],
+    guard: `First verify day ${claimDay} is resolved, my prediction matches the correct option, and the reward is unclaimed. If any check fails, do not submit the transaction.`
+  };
+  return {
+    label: "Daily check-in",
+    fn: "checkIn", args: [],
+    guard: "First read my player record. If I already checked in for the current UTC day, do not submit a duplicate transaction."
+  };
+}
+
+async function renderAgentConsole() {
+  let claimDay = Math.floor(Date.now() / 86400000) - 1;
+  try { claimDay = Number(await arenaRead().today()) - 1; } catch (e) { /* UTC fallback above */ }
+  const spec = agentActionSpec(selectedAgentAction, claimDay);
+  const calldata = arenaInterface.encodeFunctionData(spec.fn, spec.args);
+  const payload = {
+    network: "BNB Chain",
+    chainId: CONFIG.CHAIN_ID,
+    from: "the user's Agentic Wallet address",
+    to: CONFIG.ARENA_ADDRESS,
+    function: spec.fn,
+    args: spec.args,
+    calldata,
+    value: "0"
+  };
+  const instruction = [
+    `AGENT ARENA ACTION — ${spec.label}`,
+    "",
+    "Act for my Agentic Wallet on BNB Chain (chainId 56).",
+    `1. Verify the Agent Arena contract: ${CONFIG.ARENA_ADDRESS}.`,
+    `2. Confirm my wallet holds Agent ID: ${CONFIG.AGENT_ID}.`,
+    `3. Prepare this exact call: ${spec.fn}(${spec.args.join(", ")}).`,
+    `4. ${spec.guard}`,
+    "5. Show me the transaction preview and follow my confirmation policy before signing.",
+    "6. After broadcast, verify the receipt and report the transaction hash plus my updated points and streak.",
+    "",
+    "Safety: interact only with the contract above. Never enter a seed phrase, private key, or pairing code on a website. Agent Arena points are a game score only."
+  ].join("\n");
+  $("agentInstruction").textContent = instruction;
+  $("agentPayload").textContent = JSON.stringify(payload, null, 2);
+  document.querySelectorAll("[data-agent-action]").forEach(b => b.classList.toggle("sel", b.dataset.agentAction === selectedAgentAction));
+}
+
+async function copyAgentInstruction() {
+  const text = $("agentInstruction").textContent + "\n\nTECHNICAL PAYLOAD\n" + $("agentPayload").textContent;
+  try {
+    await navigator.clipboard.writeText(text);
+    $("copyNote").textContent = "Copied. Paste it to your agent and approve the transaction in your own setup.";
+  } catch (e) {
+    const ta = document.createElement("textarea");
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    document.execCommand("copy"); ta.remove();
+    $("copyNote").textContent = "Copied. Paste it to your agent and approve the transaction in your own setup.";
+  }
+}
+
+async function lookupPlayer() {
+  const out = $("lookupResult");
+  const raw = $("agentAddress").value.trim();
+  if (!ethers.isAddress(raw)) { out.innerHTML = "<span class='bad'>Please enter a valid BNB Chain address.</span>"; return; }
+  const addr = ethers.getAddress(raw);
+  out.textContent = "Reading the Agent ID and Agent Arena contracts…";
+  try {
+    const r = arenaRead();
+    const [bal, p, todayRaw] = await Promise.all([agentRead.balanceOf(addr), r.getPlayer(addr), r.today()]);
+    const today = Number(todayRaw);
+    const prediction = Number(await r.predictions(today, addr));
+    const holds = bal > 0n;
+    const registered = Boolean(p[5]);
+    const checkedToday = registered && Number(p[0]) === today;
+    out.innerHTML =
+      `<b>${short(addr)}</b> · <a href="https://bscscan.com/address/${addr}" target="_blank" rel="noopener">View on BscScan</a><br>` +
+      `Agent ID: <b class="${holds ? "ok" : "bad"}">${holds ? "held — eligible to play" : "not held — spectator only"}</b><br>` +
+      `Arena status: <b>${registered ? "registered player" : "not registered yet"}</b> · Points: <b>${p[3].toString()}</b> · Streak: <b>${p[1].toString()} days</b> · Tier: <b>${TIERS[Number(p[4])]}</b><br>` +
+      `Today: <b>${checkedToday ? "checked in" : "not checked in"}</b> · Prediction: <b>${prediction ? `option ${prediction}` : "none yet"}</b>`;
+  } catch (e) {
+    out.innerHTML = "<span class='bad'>The public RPC could not complete that lookup. Please try again.</span>";
+  }
+}
+
+async function loadPublicMission() {
+  try { await refreshMission(Number(await arenaRead().today())); }
+  catch (e) { $("missionQ").textContent = "The live mission could not be loaded from the public RPC right now."; }
+}
+
+async function loadActivity() {
+  const feed = $("activityFeed");
+  if (!feed) return;
+  try {
+    const r = arenaRead();
+    const latest = await readProvider.getBlockNumber();
+    const from = Math.max(0, latest - 50000);
+    const specs = [
+      [r.filters.CheckedIn(), "checkin"],
+      [r.filters.Predicted(), "prediction"],
+      [r.filters.PredictionClaimed(), "claim"],
+      [r.filters.MissionSet(), "missionSet"],
+      [r.filters.MissionResolved(), "missionResolved"]
+    ];
+    const settled = await Promise.allSettled(specs.map(([filter]) => r.queryFilter(filter, from, latest)));
+    const logs = [];
+    settled.forEach((result, i) => {
+      if (result.status !== "fulfilled") return;
+      result.value.forEach(log => logs.push({ kind: specs[i][1], log }));
+    });
+    logs.sort((a, b) => (b.log.blockNumber - a.log.blockNumber) || ((b.log.index || 0) - (a.log.index || 0)));
+    if (!logs.length) { feed.innerHTML = "<p class='mut'>No on-chain activity in the recent block window yet.</p>"; return; }
+    feed.innerHTML = logs.slice(0, 12).map(({ kind, log }) => {
+      const a = log.args || {};
+      let text = "";
+      if (kind === "checkin") text = `⚡ <b>${short(a.user)}</b> checked in · streak ${a.streak.toString()} · +${a.pointsAwarded.toString()} pts`;
+      if (kind === "prediction") text = `🎯 <b>${short(a.user)}</b> predicted option ${a.choice.toString()} for day ${a.day.toString()}`;
+      if (kind === "claim") text = `🏅 <b>${short(a.user)}</b> claimed +${a.pointsAwarded.toString()} prediction points`;
+      if (kind === "missionSet") text = `📣 Mission published for day ${a.day.toString()} · ${a.optionCount.toString()} options`;
+      if (kind === "missionResolved") text = `✅ Mission day ${a.day.toString()} resolved · correct option ${a.correctOption.toString()}`;
+      return `<div class="feedItem"><span>${text}</span><a href="https://bscscan.com/tx/${log.transactionHash}" target="_blank" rel="noopener">tx ↗</a></div>`;
+    }).join("");
+  } catch (e) {
+    feed.innerHTML = "<p class='mut'>Live activity is temporarily unavailable from the public RPC. The leaderboard and mission above still read directly from the contract.</p>";
+  }
 }
 
 async function loadBoard() {
@@ -343,13 +546,22 @@ async function loadBoard() {
     $("hsPlayers").textContent = n;
     $("hsCheckins").textContent = tc.toString();
     $("hsPredictions").textContent = tp.toString();
+    $("gateText").textContent = `${n} / 30 players`;
+    $("gateFill").style.width = `${Math.min(100, (n / 30) * 100)}%`;
   } catch (e) { $("board").innerHTML = "<p class='mut'>Leaderboard unavailable until the contract is live.</p>"; }
 }
 
 $("btnConnect").onclick = connect;
 $("btnCheckin").onclick = doCheckin;
+document.querySelectorAll("[data-agent-action]").forEach(b => { b.onclick = () => { selectedAgentAction = b.dataset.agentAction; renderAgentConsole(); }; });
+$("btnCopyAgentInstruction").onclick = copyAgentInstruction;
+$("btnLookupPlayer").onclick = lookupPlayer;
+$("agentAddress").addEventListener("keydown", e => { if (e.key === "Enter") lookupPlayer(); });
 if (window.ethereum) window.ethereum.on?.("accountsChanged", () => location.reload());
+renderAgentConsole();
 loadBoard();
+loadPublicMission();
+loadActivity();
 </script>
 </body>
 </html>
