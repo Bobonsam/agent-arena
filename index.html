@@ -492,36 +492,37 @@ async function loadPublicMission() {
   catch (e) { $("missionQ").textContent = "The live mission could not be loaded from the public RPC right now."; }
 }
 
+// Event logs need a logs-friendly public RPC (the default read RPC rejects eth_getLogs),
+// so the activity feed scans the Arena address in 5,000-block chunks, newest first.
+const logProvider = new ethers.JsonRpcProvider("https://bsc-rpc.publicnode.com");
 async function loadActivity() {
   const feed = $("activityFeed");
   if (!feed) return;
   try {
-    const r = arenaRead();
-    const latest = await readProvider.getBlockNumber();
-    const from = Math.max(0, latest - 50000);
-    const specs = [
-      [r.filters.CheckedIn(), "checkin"],
-      [r.filters.Predicted(), "prediction"],
-      [r.filters.PredictionClaimed(), "claim"],
-      [r.filters.MissionSet(), "missionSet"],
-      [r.filters.MissionResolved(), "missionResolved"]
-    ];
-    const settled = await Promise.allSettled(specs.map(([filter]) => r.queryFilter(filter, from, latest)));
-    const logs = [];
-    settled.forEach((result, i) => {
-      if (result.status !== "fulfilled") return;
-      result.value.forEach(log => logs.push({ kind: specs[i][1], log }));
-    });
-    logs.sort((a, b) => (b.log.blockNumber - a.log.blockNumber) || ((b.log.index || 0) - (a.log.index || 0)));
-    if (!logs.length) { feed.innerHTML = "<p class='mut'>No on-chain activity in the recent block window yet.</p>"; return; }
-    feed.innerHTML = logs.slice(0, 12).map(({ kind, log }) => {
-      const a = log.args || {};
+    const latest = await logProvider.getBlockNumber();
+    const CHUNK = 5000, MAXCHUNKS = 24;
+    const found = [];
+    for (let i = 0; i < MAXCHUNKS; i++) {
+      const to = latest - i * CHUNK;
+      if (to < 0) break;
+      const from = Math.max(0, to - CHUNK + 1);
+      const raw = await logProvider.getLogs({ address: CONFIG.ARENA_ADDRESS, fromBlock: from, toBlock: to });
+      for (const log of raw) {
+        const parsed = arenaInterface.parseLog(log);
+        if (parsed) found.push({ name: parsed.name, args: parsed.args, log });
+      }
+      if (from === 0 || found.length >= 12) break;
+    }
+    found.sort((a, b) => (b.log.blockNumber - a.log.blockNumber) || ((b.log.index || 0) - (a.log.index || 0)));
+    if (!found.length) { feed.innerHTML = "<p class='mut'>No on-chain activity in the recent block window yet.</p>"; return; }
+    feed.innerHTML = found.slice(0, 12).map(({ name, args: a, log }) => {
       let text = "";
-      if (kind === "checkin") text = `⚡ <b>${short(a.user)}</b> checked in · streak ${a.streak.toString()} · +${a.pointsAwarded.toString()} pts`;
-      if (kind === "prediction") text = `🎯 <b>${short(a.user)}</b> predicted option ${a.choice.toString()} for day ${a.day.toString()}`;
-      if (kind === "claim") text = `🏅 <b>${short(a.user)}</b> claimed +${a.pointsAwarded.toString()} prediction points`;
-      if (kind === "missionSet") text = `📣 Mission published for day ${a.day.toString()} · ${a.optionCount.toString()} options`;
-      if (kind === "missionResolved") text = `✅ Mission day ${a.day.toString()} resolved · correct option ${a.correctOption.toString()}`;
+      if (name === "CheckedIn") text = `⚡ <b>${short(a.user)}</b> checked in · streak ${a.streak.toString()} · +${a.pointsAwarded.toString()} pts`;
+      if (name === "Predicted") text = `🎯 <b>${short(a.user)}</b> predicted option ${a.choice.toString()} for day ${a.day.toString()}`;
+      if (name === "PredictionClaimed") text = `🏅 <b>${short(a.user)}</b> claimed +${a.pointsAwarded.toString()} prediction points`;
+      if (name === "MissionSet") text = `📣 Mission published for day ${a.day.toString()} · ${a.optionCount.toString()} options`;
+      if (name === "MissionResolved") text = `✅ Mission day ${a.day.toString()} resolved · correct option ${a.correctOption.toString()}`;
+      if (!text) return "";
       return `<div class="feedItem"><span>${text}</span><a href="https://bscscan.com/tx/${log.transactionHash}" target="_blank" rel="noopener">tx ↗</a></div>`;
     }).join("");
   } catch (e) {
